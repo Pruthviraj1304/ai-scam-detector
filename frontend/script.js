@@ -38,6 +38,7 @@ async function scanText() {
             <ul>
                 ${data.reasons.map(r => `<li>${r}</li>`).join("")}
             </ul>
+            <button onclick="copyResult()" style="margin-top:10px; padding:8px 16px; background:#3b82f6; color:white; border:none; border-radius:4px; cursor:pointer;">Copy Result</button>
         `;
 
     } catch (error) {
@@ -49,3 +50,24 @@ async function scanText() {
         `;
     }
 }
+
+function copyResult() {
+    const text = document.getElementById("result").innerText;
+    navigator.clipboard.writeText(text).then(() => {
+        alert("Result copied to clipboard!");
+    }).catch(err => {
+        console.error('Failed to copy text: ', err);
+    });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+    const input = document.getElementById("inputText");
+    if (input) {
+        input.addEventListener("keydown", function(event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                scanText();
+            }
+        });
+    }
+});
