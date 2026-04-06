@@ -1,8 +1,10 @@
+import os
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 
-data = pd.read_csv("../dataset/scam_data.csv")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+data = pd.read_csv(os.path.join(BASE_DIR, "dataset", "scam_data.csv"))
 
 X = data["text"]
 y = data["label"]

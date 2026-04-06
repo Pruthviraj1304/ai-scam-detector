@@ -6,10 +6,10 @@ async function scanText() {
         return;
     }
 
-    document.getElementById("result").innerHTML = "Scanning...";
+    document.getElementById("result").innerHTML = "Scanning... (wait 10-20 sec first time)";
 
     try {
-        const response = await fetch("http://127.0.0.1:5000/scan", {
+        const response = await fetch("https://ai-scam-detector-1-qtm7.onrender.com/scan", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
@@ -38,15 +38,14 @@ async function scanText() {
             <ul>
                 ${data.reasons.map(r => `<li>${r}</li>`).join("")}
             </ul>
-            <button onclick="copyResult()">Copy Result</button>
         `;
 
-    } catch {
-        document.getElementById("result").innerHTML = "Error connecting to server";
+    } catch (error) {
+        console.log(error);
+        document.getElementById("result").innerHTML = `
+            ❌ Error connecting to server<br><br>
+            👉 Wait 20 sec (Render sleeps)<br>
+            👉 Then try again
+        `;
     }
-}
-
-function copyResult() {
-    const text = document.getElementById("result").innerText;
-    navigator.clipboard.writeText(text);
 }

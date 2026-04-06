@@ -1,3 +1,4 @@
+import os
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import re
@@ -10,8 +11,11 @@ from model import predict_scam
 app = Flask(__name__)
 CORS(app)
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(BASE_DIR, "scans.db")
+
 def init_db():
-    conn = sqlite3.connect("scans.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS scans
                  (text TEXT, score INTEGER, risk TEXT, ml REAL)""")
@@ -19,7 +23,7 @@ def init_db():
     conn.close()
 
 def save_scan(text, score, risk, ml):
-    conn = sqlite3.connect("scans.db")
+    conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
     c.execute("INSERT INTO scans VALUES (?,?,?,?)", (text, score, risk, ml))
     conn.commit()
@@ -28,6 +32,11 @@ def save_scan(text, score, risk, ml):
 init_db()
 
 def get_domain_age(domain):
+    # Render's free tier blocks port 43 (WHOIS), which causes the request to timeout and crash.
+    # To fix this, we bypass whois lookup if running on Render (where PORT env var is usually set).
+    if os.environ.get("RENDER"):
+        return -1
+        
     try:
         domain_info = whois.whois(domain)
         creation_date = domain_info.creation_date
@@ -67,7 +76,7 @@ def analyze_text(text):
             reasons.append(f"Keyword detected: {word}")
 
     if re.search(r"http[s]?://", text):
-        score += 20
+        score += 30
         reasons.append("Contains a link")
 
         domain = extract_domain(text)
@@ -76,7 +85,7 @@ def analyze_text(text):
             age = get_domain_age(domain)
 
             if age == -1:
-                score += 25
+                score += 35
                 reasons.append("Suspicious domain (WHOIS lookup failed)")
             elif age is None:
                 score += 35
@@ -145,5 +154,5 @@ def scan():
     })
 
 if __name__ == "__main__":
-    print("Server running...")
-    app.run(debug=True)
+    port = int(os.environ.get("PORT", 10000))
+    app.run(host="0.0.0.0", port=port)
