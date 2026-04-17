@@ -5,31 +5,12 @@ import re
 import whois
 from urllib.parse import urlparse
 from datetime import datetime
-import sqlite3
 from model import predict_scam
 
 app = Flask(__name__)
 CORS(app)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DB_PATH = os.path.join(BASE_DIR, "scans.db")
-
-def init_db():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("""CREATE TABLE IF NOT EXISTS scans
-                 (text TEXT, score INTEGER, risk TEXT, ml REAL)""")
-    conn.commit()
-    conn.close()
-
-def save_scan(text, score, risk, ml):
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("INSERT INTO scans VALUES (?,?,?,?)", (text, score, risk, ml))
-    conn.commit()
-    conn.close()
-
-init_db()
 
 def get_domain_age(domain):
     # Render's free tier blocks port 43 (WHOIS), which causes the request to timeout and crash.
@@ -162,8 +143,6 @@ def scan():
         risk = "Medium"
     else:
         risk = "Low"
-
-    save_scan(text, score, risk, probability)
 
     return jsonify({
         "score": score,

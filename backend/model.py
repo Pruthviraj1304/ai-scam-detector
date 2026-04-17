@@ -1,21 +1,34 @@
 import os
-import pandas as pd
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.linear_model import LogisticRegression
+import joblib
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-data = pd.read_csv(os.path.join(BASE_DIR, "dataset", "scam_data.csv"))
+MODEL_DIR = os.path.join(BASE_DIR, "models")
 
-X = data["text"]
-y = data["label"]
+VECTORIZER_PATH = os.path.join(MODEL_DIR, "vectorizer.pkl")
+MODEL_PATH = os.path.join(MODEL_DIR, "model.pkl")
 
-vectorizer = TfidfVectorizer(ngram_range=(1, 2), stop_words='english', max_features=5000)
-X_vec = vectorizer.fit_transform(X)
+# We use global variables so they load once when the app starts
+vectorizer = None
+model = None
 
-model = LogisticRegression(max_iter=1000, class_weight='balanced')
-model.fit(X_vec, y)
+def load_models():
+    global vectorizer, model
+    if os.path.exists(VECTORIZER_PATH) and os.path.exists(MODEL_PATH):
+        vectorizer = joblib.load(VECTORIZER_PATH)
+        model = joblib.load(MODEL_PATH)
+    else:
+        print("WARNING: Model files not found! Please run train.py first.")
+        vectorizer = None
+        model = None
+
+# Load the models immediately. Because it's from a .pkl, this is instantly fast.
+load_models()
 
 def predict_scam(text):
+    if vectorizer is None or model is None:
+        # Failsafe if training wasn't done yet, return 0 risk
+        return 0, 0.0
+
     text_vec = vectorizer.transform([text])
     prediction = model.predict(text_vec)[0]
     probability = model.predict_proba(text_vec)[0][1]
