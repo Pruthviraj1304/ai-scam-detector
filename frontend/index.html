@@ -1,19 +1,57 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AI Scam Detector</title>
+    <meta name="description" content="Detect phishing links, fraudulent emails, and scam messages instantly with AI.">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div class="container">
-    <h1>AI Scam Detector</h1>
+    <h1>ScamGuard AI</h1>
+    <p class="subtitle">Secure your digital life. Analyze messages, emails, and links for fraud instantly.</p>
 
-    <textarea id="inputText" placeholder="Paste job link, message or text here..."></textarea>
+    <div class="input-wrapper">
+        <textarea id="inputText" placeholder="Paste a suspicious email, text message, or link here..."></textarea>
+    </div>
 
-    <button onclick="scanText()">Scan</button>
+    <button class="scan-btn" onclick="scanText()" id="scanBtn">
+        <span class="btn-text">Analyze Content</span>
+        <div class="loader" id="loader"></div>
+    </button>
 
-    <div id="result"></div>
+    <div class="result-container" id="resultContainer">
+        <div style="text-align: center;">
+            <div class="risk-badge" id="riskBadge">Evaluating...</div>
+        </div>
+
+        <div class="stat-row">
+            <span class="stat-label">Overall Safety Score</span>
+            <span class="stat-value" id="overallScore">0/100</span>
+        </div>
+        
+        <div class="stat-row">
+            <span class="stat-label">AI Confidence</span>
+            <span class="stat-value" id="mlConfidence">0%</span>
+        </div>
+        
+        <div class="progress-bg">
+            <div class="progress-fill" id="progressBar"></div>
+        </div>
+
+        <h3 class="reasons-title">Analysis Log</h3>
+        <ul class="reasons-list" id="reasonsList">
+            <!-- Reasons populated here via JS -->
+        </ul>
+
+        <button class="copy-btn" onclick="copyResult()">Copy Full Report</button>
+    </div>
 </div>
 
 <script src="script.js"></script>

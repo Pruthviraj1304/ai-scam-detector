@@ -59,6 +59,9 @@ def extract_domain(text):
         return parsed_url.netloc
     return None
 
+URL_SHORTENERS = ["bit.ly", "tinyurl.com", "t.co", "goo.gl", "ow.ly", "is.gd", "buff.ly", "cutt.ly", "bit.do"]
+BURNER_EMAILS = ["tempmail.com", "10minutemail.com", "guerrillamail.com", "yopmail.com", "throwawaymail.com", "mailinator.com", "temp-mail.org"]
+
 def analyze_text(text):
     text_lower = text.lower()
     score = 0
@@ -67,37 +70,53 @@ def analyze_text(text):
     scam_keywords = [
         "win money", "earn fast", "urgent", "limited offer",
         "click now", "free", "guaranteed", "no experience",
-        "work from home", "investment", "double your money"
+        "work from home", "investment", "double your money",
+        "gift card", "verify your account", "locked", "suspended",
+        "virus detected", "lottery", "crypto", "bitcoin"
     ]
 
     for word in scam_keywords:
         if word in text_lower:
             score += 10
-            reasons.append(f"Keyword detected: {word}")
+            reasons.append(f"Keyword detected: '{word}'")
 
-    if re.search(r"http[s]?://", text):
-        score += 30
-        reasons.append("Contains a link")
-
-        domain = extract_domain(text)
-
-        if domain:
-            age = get_domain_age(domain)
-
-            if age == -1:
-                score += 35
-                reasons.append("Suspicious domain (WHOIS lookup failed)")
-            elif age is None:
-                score += 35
-                reasons.append("Suspicious domain (hidden or unverifiable)")
-            elif age < 30:
-                score += 30
-                reasons.append(f"Very new domain ({age} days old)")
-            elif age < 180:
-                score += 15
-                reasons.append(f"New domain ({age} days old)")
+    emails = re.findall(r'[\w\.-]+@[\w\.-]+\.\w+', text)
+    if emails:
+        for email in emails:
+            domain = email.split('@')[-1].lower()
+            if domain in BURNER_EMAILS:
+                score += 40
+                reasons.append(f"Suspicious burner email: {email}")
             else:
-                reasons.append(f"Old domain ({age} days old)")
+                score += 5
+                reasons.append(f"Email detected: {email}")
+
+    urls = re.findall(r'(https?://[^\s]+)', text)
+    if urls:
+        score += 20
+        reasons.append("Contains link(s)")
+
+        for url in urls:
+            parsed_url = urlparse(url)
+            domain = parsed_url.netloc.lower()
+
+            if any(shortener in domain for shortener in URL_SHORTENERS):
+                score += 35
+                reasons.append(f"Link uses URL shortener ({domain})")
+            else:
+                age = get_domain_age(domain)
+                if age == -1:
+                    score += 15
+                    reasons.append(f"Suspicious domain ({domain} WHOIS failed)")
+                elif age is None:
+                    score += 15
+                    reasons.append(f"Suspicious domain ({domain} hidden)")
+                elif age < 30:
+                    score += 30
+                    reasons.append(f"Very new domain ({age} days old)")
+                elif age < 180:
+                    score += 10
+                    reasons.append(f"New domain ({age} days old)")
 
     if re.search(r"\d{10,}", text):
         score += 10
@@ -111,7 +130,7 @@ def analyze_text(text):
         score += 5
         reasons.append("Very short message")
 
-    return score, reasons
+    return score, list(set(reasons))
 
 @app.route("/")
 def home():
